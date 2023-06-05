@@ -1,0 +1,16 @@
+{
+  "name": "cryptosocialscraper",
+  "version": "1.0.0",
+  "description": "Social Scraper for CryptoCurrency Project",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Enes Can Işık",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "cheerio": "^1.0.0-rc.12",
+    "node-fetch": "^3.3.1"
+  }
+}

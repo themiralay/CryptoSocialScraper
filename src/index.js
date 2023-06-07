@@ -1,9 +1,10 @@
 import fetch from 'node-fetch';
 import * as cheerio from 'cheerio';
+import fs from 'node:fs'
 
 //const url = 'https://t.me/Aavesome';
 //const url = 'https://t.me/pepecoineth';
-const cmcUrl = 'https://coinmarketcap.com/?page=2';
+const cmcUrl = 'https://coinmarketcap.com/';
 
 const headers = {
   'Content-Type': 'application/json',
@@ -63,12 +64,7 @@ async function cleanStringToInt(string) {
     return result;
 }
 
-const fetchCMC = await fetcher(baseUrl,options)
-const $ = cheerio.load(fetchCMC)
-
-const links = await getAllLink(cmcUrl)
-
-async function getAllLink(url){
+async function getAllLink($,url){
     let baseUrl = url
     const baseHref = $('base').attr('href')
 
@@ -107,8 +103,51 @@ async function getAllLink(url){
     .filter((href) => !!href) || []
     return urlArray
 }
+const regex = /currencies\/([^/]+)\/$/;
+
+// function cutLastTwoSlash(str) {
+//     var cutSlashIndex = str.lastIndexOf('/');
+//     var secondSlashIndex = str.lastIndexOf('/', cutSlashIndex - 1);
+//     return str.slice(0, secondSlashIndex);
+//   }
+
+async function cmcCurrencyGetter(url){
+    const fetchCMC = await fetcher(url,options)
+    const $ = cheerio.load(fetchCMC)
+    const links = await getAllLink($,url)
+    const cmcCryptoLinks = []
+    for (const link of links) {
+        const match = link.match(regex);
+        if(match){
+            cmcCryptoLinks.push(link)
+        }
+    }
+    return cmcCryptoLinks
+}
+
+async function saveArrayToCSV(array, filePath) {
+    const csvData = array.join('\n');
+  
+    await new Promise((resolve, reject) => {
+      const stream = fs.createWriteStream(filePath, { flags: 'a' });
+      stream.write(csvData, 'utf-8', (error) => {
+        if (error) {
+          reject(error);
+        } else {
+          stream.end();
+          resolve();
+        }
+      });
+    });
+  
+    console.log('Write Ok:', filePath);
+  }
 
 
-
-const result = getChannelStatus($page)
+for (let index = 1; index <= 60; index++) {
+    const url = `${cmcUrl}?page=${index}`
+    const cmcPageCoin = await cmcCurrencyGetter(url)
+    await saveArrayToCSV(cmcPageCoin, 'output.csv');
+}
 debugger
+//const result = getChannelStatus($page)

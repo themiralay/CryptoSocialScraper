@@ -7,11 +7,20 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Launch Program",
+            "name": "Solo Crawler",
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${workspaceFolder}\\src\\index.js"
+            "program": "${workspaceFolder}\\src\\soloCrawler.js"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Bulk Crawler",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}\\src\\bulkCrawler.js"
         }
     ]
 }

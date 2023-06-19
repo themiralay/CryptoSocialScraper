@@ -12,76 +12,59 @@ class ClusterCrawler {
     if (cluster.isPrimary) {
       return this.setupMasterProcess(urls, parserFunction);
     } else {
-      await this.setupWorkerProcess();
+      return this.setupWorkerProcess(urls, parserFunction);
     }
   }
 
-  async setupWorkerProcess() {
-    process.on('message', async (message) => {
-      const { urls, parser } = message;
-      const results = [];
+  async setupWorkerProcess(urls, parserFunction) {
+    const results = [];
 
-      for (const url of urls) {
-        try {
-          const result = await this.crawler.crawl(url, parser);
-          results.push(result);
-        } catch (error) {
-          console.error(`Error crawling ${url}:`, error);
-        }
+    for (const url of urls) {
+      try {
+        const result = await this.crawler.crawl(url, parserFunction);
+        results.push(result);
+      } catch (error) {
+        console.error(`Error crawling ${url}:`, error);
       }
+    }
 
-      this.sendResultsToMasterProcess(results);
-      process.exit(0);
-    });
+    return results;
   }
 
-  async setupMasterProcess(urls, parser) {
+  async setupMasterProcess(urls, parserFunction) {
     const numWorkers = Math.min(this.numCPUs, urls.length);
     const urlChunks = this.splitUrlsIntoChunks(urls, numWorkers);
-  
+
     const promises = [];
-    const allResults = [];
-  
+
     for (let i = 0; i < numWorkers; i++) {
-      const worker = cluster.fork();
       const workerUrls = urlChunks[i];
-  
+
       promises.push(
         new Promise((resolve, reject) => {
+          const worker = cluster.fork();
+
           worker.on('message', (message) => {
             if (message.type === 'result') {
-              allResults.push(...message.result);
+              resolve(message.result);
             } else if (message.type === 'error') {
               console.error('Worker error:', message.error);
+              resolve([]);
             }
           });
-  
+
+          worker.send({ urls: workerUrls, parser: parserFunction });
+
           worker.on('exit', (code, signal) => {
-            if (signal) {
-              console.log(`Worker ${worker.process.pid} was terminated by signal: ${signal}`);
-            } else if (code !== 0) {
-              console.error(`Worker ${worker.process.pid} exited with error code: ${code}`);
-            }
-          });
-  
-          worker.send({ urls: workerUrls, parser });
-  
-          // İşçi süreci sonlandığında resolve() çağırılır
-          worker.on('exit', () => {
-            resolve();
+            console.log(`Worker ${worker.process.pid} exited with code: ${code}. Restarting...`);
+            cluster.fork();
           });
         })
       );
     }
-  
-    await Promise.all(promises);
-  
-    // Tüm işçi süreçleri tamamlandığında sonuçları döndürür
-    return allResults;
-  }
 
-  sendResultsToMasterProcess(results) {
-    process.send({ type: 'result', result: results });
+    const results = await Promise.all(promises);
+    return results.flat();
   }
 
   splitUrlsIntoChunks(urls, numChunks) {

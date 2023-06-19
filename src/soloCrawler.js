@@ -2,12 +2,9 @@ import Crawler from './crawler/crawler.js';
 
 const crawler = new Crawler();
 
-const url = 'https://google.com';
-const twitterParser = (data) => {
-  // Twitter parsing işlemleri
-  // ...
-  return parsedData;
-};
+class SoloCrawler(url){
+    const url = 'https://google.com';
 
-const result = await crawler.crawl(url);
-debugger
+    const result = await crawler.crawl(url);
+    debugger
+}

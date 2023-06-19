@@ -12,6 +12,7 @@
   "dependencies": {
     "cheerio": "^1.0.0-rc.12",
     "clickhouse": "^2.6.0",
+    "commander": "^11.0.0",
     "node-fetch": "^3.3.1"
   }
 }
